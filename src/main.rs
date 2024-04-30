@@ -9,8 +9,19 @@ use solana_sdk::{
     signer::{keypair::Keypair, Signer},
 };
 
+fn is_base58(encoded_str: &str) -> bool {
+    let base58_chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+    // Check if all characters in the encoded string are present in the Base58 character set
+    encoded_str.chars().all(|c| base58_chars.contains(c))
+}
+
 fn main() {
     let string_to_find = std::env::args().nth(1).expect("No pattern given");
+
+    if !is_base58(&string_to_find) {
+        panic!("Input string is not in Base58 encoding");
+    }
 
     let thread_count: usize = match std::env::args().nth(2) {
         Some(tc) => tc.parse().expect("Thread count must be a number"),
@@ -32,7 +43,7 @@ fn main() {
 
     for _ in 0..thread_count {
         let thread_tx = tx.clone();
-        let to_find = string_to_find.clone();
+        let to_find = string_to_find.clone().to_ascii_lowercase();
 
         thread::spawn(move || loop {
             thread_tx.send(1).unwrap();
@@ -40,21 +51,21 @@ fn main() {
             let keypair = Keypair::new();
             let create_key = keypair.pubkey();
             let program_id =
-                Pubkey::try_from("SMPLecH534NA9acpos4G6x7uf3LWbCAwZQE9e8ZekMu").unwrap();
+                Pubkey::try_from("SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf").unwrap();
 
             let (ms_pda, _) = Pubkey::find_program_address(
-                &[b"squad", create_key.as_ref(), b"multisig"],
+                &[b"multisig", b"multisig", create_key.as_ref()],
                 &program_id,
             );
 
-            let authority_index: u32 = 1;
+            let authority_index: u8 = 0;
 
             let (pda, _) = Pubkey::find_program_address(
                 &[
-                    b"squad",
+                    b"multisig",
                     ms_pda.as_ref(),
+                    b"vault",
                     &authority_index.to_le_bytes(),
-                    b"authority",
                 ],
                 &program_id,
             );
